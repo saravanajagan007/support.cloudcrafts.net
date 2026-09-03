@@ -27,12 +27,51 @@
   * `evolution-api` (`evoapicloud/evolution-api:v2.2.3`): WhatsApp engine on port `8080` (internal)
   * `evolution-postgres` (`postgres:15-alpine`): Persistent PostgreSQL database
   * `redis` (`redis:6379/4`): High-speed session & event caching
-* **Web UI (Evolution Manager)**: `https://support.cloudcrafts.net/manager`
-* **API URL**: `https://support.cloudcrafts.net`
-* **API Key Header**: `apikey: EvoCloudCrafts_9876543210!`
 * **Nginx Configuration**: `/srv/docker/nginx/conf.d/support.cloudcrafts.net.conf` (reverse proxying to `http://evolution-api:8080`)
 * **SSL Certificate**: Let's Encrypt SSL at `/etc/letsencrypt/live/support.cloudcrafts.net/`
 * **Legacy CRM**: PM2 process `support-cloudcrafts` removed; code archived at `/srv/apps/support.cloudcrafts.net.bak`.
+
+---
+
+## 🔑 Evolution API Credentials & Access Details
+
+### 1. Web Manager UI & API Gateway:
+* **Evolution Manager (Web UI)**: [`https://support.cloudcrafts.net/manager`](https://support.cloudcrafts.net/manager)
+* **API Base URL**: `https://support.cloudcrafts.net`
+* **Global API Key**: `EvoCloudCrafts_9876543210!`
+* **Auth Header**: `apikey: EvoCloudCrafts_9876543210!`
+
+### 2. Internal Database & Cache Credentials:
+* **PostgreSQL Service**: `evolution-postgres:5432` (internal Docker network `srv_default`)
+  * **Database Name**: `evolution`
+  * **Database User**: `evolution`
+  * **Database Password**: `EvoPostgres_9876543210!`
+  * **Connection URI**: `postgresql://evolution:EvoPostgres_9876543210!@evolution-postgres:5432/evolution`
+* **Redis Cache**:
+  * **URI**: `redis://redis:6379/4` (Database index 4 on existing Redis container)
+  * **Prefix Key**: `evolution`
+
+### 3. Persistent Data Volumes (on VPS):
+* `/srv/apps/evolution-api/data/postgres`: PostgreSQL database files
+* `/srv/apps/evolution-api/data/instances`: Baileys session data, encryption keys & tokens
+* `/srv/apps/evolution-api/data/store`: WhatsApp chats, messages, and contact store
+
+### 4. Basic API Usage Quick Reference:
+* **Fetch All Instances**:
+  ```bash
+  curl -X GET "https://support.cloudcrafts.net/instance/fetchInstances" \
+    -H "apikey: EvoCloudCrafts_9876543210!"
+  ```
+* **Send Text Message (No 24h Window / No Template Needed)**:
+  ```bash
+  curl -X POST "https://support.cloudcrafts.net/message/sendText/<instance-name>" \
+    -H "apikey: EvoCloudCrafts_9876543210!" \
+    -H "Content-Type: application/json" \
+    -d '{
+      "number": "919876543210",
+      "text": "Hello! Reaching out from CloudCrafts."
+    }'
+  ```
 
 ---
 
