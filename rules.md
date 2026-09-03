@@ -24,7 +24,7 @@
 * **SSH User**: `root`
 * **Deployment Path**: `/srv/apps/evolution-api` (Docker Compose)
 * **Services**:
-  * `evolution-api` (`evoapicloud/evolution-api:v2.2.3`): WhatsApp engine on port `8080` (internal)
+  * `evolution-api` (`evoapicloud/evolution-api:v2.2.3`): WhatsApp engine on port `8080` (internal, `CONFIG_SESSION_PHONE_VERSION=2.3000.1043857760`)
   * `evolution-postgres` (`postgres:15-alpine`): Persistent PostgreSQL database
   * `redis` (`redis:6379/4`): High-speed session & event caching
 * **Nginx Configuration**: `/srv/docker/nginx/conf.d/support.cloudcrafts.net.conf` (reverse proxying to `http://evolution-api:8080`)
