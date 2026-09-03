@@ -22,10 +22,17 @@
 ## 🖥️ Server & Deployment Configuration
 * **VPS Host**: `172.93.49.117`
 * **SSH User**: `root`
-* **Nginx Configuration**: `/etc/nginx/sites-available/support.cloudcrafts.net`
-* **Process Manager**: PM2 (`support-cloudcrafts`)
-* **Reverse Proxy Port**: `http://127.0.0.1:3006`
-* **SSL Certificate**: Cloudflare Flexible / Let's Encrypt SSL
+* **Deployment Path**: `/srv/apps/evolution-api` (Docker Compose)
+* **Services**:
+  * `evolution-api` (`evoapicloud/evolution-api:v2.2.3`): WhatsApp engine on port `8080` (internal)
+  * `evolution-postgres` (`postgres:15-alpine`): Persistent PostgreSQL database
+  * `redis` (`redis:6379/4`): High-speed session & event caching
+* **Web UI (Evolution Manager)**: `https://support.cloudcrafts.net/manager`
+* **API URL**: `https://support.cloudcrafts.net`
+* **API Key Header**: `apikey: EvoCloudCrafts_9876543210!`
+* **Nginx Configuration**: `/srv/docker/nginx/conf.d/support.cloudcrafts.net.conf` (reverse proxying to `http://evolution-api:8080`)
+* **SSL Certificate**: Let's Encrypt SSL at `/etc/letsencrypt/live/support.cloudcrafts.net/`
+* **Legacy CRM**: PM2 process `support-cloudcrafts` removed; code archived at `/srv/apps/support.cloudcrafts.net.bak`.
 
 ---
 
