@@ -1,0 +1,72 @@
+services:
+  evolution-postgres:
+    image: postgres:15-alpine
+    container_name: evolution-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: evolution
+      POSTGRES_USER: evolution
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-EvoPostgres_9876543210!}
+    volumes:
+      - ./data/postgres:/var/lib/postgresql/data
+    networks:
+      - srv_default
+
+  evolution-api:
+    image: evoapicloud/evolution-api:v2.2.3
+    container_name: evolution-api
+    restart: unless-stopped
+    depends_on:
+      - evolution-postgres
+    environment:
+      - SERVER_URL=${SERVER_URL:-https://support.cloudcrafts.net}
+      - SERVER_TYPE=http
+      - SERVER_PORT=8080
+      - CORS_ORIGIN=*
+      - CORS_METHODS=POST,GET,PUT,DELETE,OPTIONS
+      - CORS_CREDENTIALS=true
+      
+      # Authentication API Key
+      - AUTHENTICATION_API_KEY=${AUTHENTICATION_API_KEY:-EvoCloudCrafts_9876543210!}
+      - AUTHENTICATION_EXPOSE_IN_FETCH_INSTANCES=true
+      
+      # Database
+      - DATABASE_ENABLED=true
+      - DATABASE_PROVIDER=postgresql
+      - DATABASE_CONNECTION_URI=postgresql://evolution:${POSTGRES_PASSWORD:-EvoPostgres_9876543210!}@evolution-postgres:5432/evolution
+      - DATABASE_CONNECTION_CLIENT_NAME=evolution_v2
+      - DATABASE_SAVE_DATA_INSTANCE=true
+      - DATABASE_SAVE_DATA_NEW_MESSAGE=true
+      - DATABASE_SAVE_MESSAGE_UPDATE=true
+      - DATABASE_SAVE_DATA_CONTACTS=true
+      - DATABASE_SAVE_DATA_CHATS=true
+      
+      # Redis Cache
+      - CACHE_REDIS_ENABLED=true
+      - CACHE_REDIS_URI=${CACHE_REDIS_URI:-redis://redis:6379/4}
+      - CACHE_REDIS_PREFIX_KEY=evolution
+      
+      # Session & Browser configuration
+      - CONFIG_SESSION_PHONE_CLIENT=Ubuntu
+      - CONFIG_SESSION_PHONE_NAME=Chrome
+      - CONFIG_SESSION_PHONE_VERSION=2.3000.1043857760
+      - QRCODE_LIMIT=30
+      
+      # Local Stores
+      - STORE_MESSAGES=true
+      - STORE_MESSAGE_UP=true
+      - STORE_CONTACTS=true
+      - STORE_CHATS=true
+      
+      # Manager UI
+      - MANAGER_ENABLED=true
+
+    volumes:
+      - ./data/instances:/evolution/instances
+      - ./data/store:/evolution/store
+    networks:
+      - srv_default
+
+networks:
+  srv_default:
+    external: true
