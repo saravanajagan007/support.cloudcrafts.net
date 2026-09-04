@@ -25,7 +25,7 @@
   * `chatwoot-worker` (`chatwoot/chatwoot:latest`): Sidekiq background task processor
   * `chatwoot-postgres` (`pgvector/pgvector:pg15`): PostgreSQL 15 database with pgvector
 * **Redis**: `redis://redis:6379/5`
-* **Nginx Configuration**: `/srv/docker/nginx/conf.d/support.cloudcrafts.net.conf` (proxies to `http://chatwoot-web:3000` with `underscores_in_headers on;`)
+* **Nginx Configuration**: `/srv/docker/nginx/conf.d/support.cloudcrafts.net.conf` (proxies to `http://chatwoot-web:3000` with `underscores_in_headers on;`, dedicated `/cable` WebSocket block, `proxy_buffer_size 128k;`, and `large_client_header_buffers 8 64k;` to prevent Cloudflare 520 buffer drops)
 * **SSL Certificate**: `/etc/letsencrypt/live/support.cloudcrafts.net/`
 
 ### 2. Evolution API Gateway (`wa.cloudcrafts.net`):
@@ -80,3 +80,14 @@
 ## 🎨 Quality & Testing Rules
 * Always run `npm run typecheck` or `npm run build` locally before pushing changes to ensure zero compilation or type errors.
 * Maintain mobile-first responsiveness across all inbox, pipeline, and automation views.
+
+---
+
+## 🛠️ Troubleshooting & Learnings
+* **Cloudflare Error 520 Resolution**:
+  * **Symptom**: Chatwoot returned `"Web server is returning an unknown error Error code 520"` when authenticated users loaded `/app/accounts/1/dashboard`. Nginx access logs recorded `"-" 000 0`.
+  * **Root Cause**: Nginx's default `large_client_header_buffers` (`4 4k`) was too small for incoming browser sessions (cookies + Cloudflare headers), causing Nginx to abruptly drop the HTTP/2 stream before completing the request. Additionally, upstream response headers with large preload links and cookies exceeded standard proxy buffer limits, and `Connection 'upgrade'` was applied unconditionally to all HTTP requests.
+  * **Fix Applied**:
+    1. In `/srv/docker/nginx/nginx.conf`: Increased `client_header_buffer_size 16k;`, `large_client_header_buffers 8 64k;`, and added `map $http_upgrade $connection_upgrade`.
+    2. In `/srv/docker/nginx/conf.d/support.cloudcrafts.net.conf`: Split `/cable` into a dedicated WebSocket location block, added `proxy_buffer_size 128k; proxy_buffers 8 128k; proxy_busy_buffers_size 256k;`, and used `$connection_upgrade` mapping.
+
