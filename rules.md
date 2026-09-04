@@ -8,63 +8,60 @@
 ---
 
 ## 🚀 Project Overview & Architecture
-* **Project Name**: `support.cloudcrafts.net` (WhatsApp CRM & Support Platform)
-* **Domain / Subdomain**: `support.cloudcrafts.net`
+* **Customer Support CRM**: `https://support.cloudcrafts.net` (Chatwoot v3 / Rails 7 + Vue + Sidekiq)
+* **WhatsApp Gateway API**: `https://wa.cloudcrafts.net` (Evolution API v2.2.3 / Baileys)
 * **Repository**: [`https://github.com/saravanajagan007/support.cloudcrafts.net`](https://github.com/saravanajagan007/support.cloudcrafts.net)
-* **Tech Stack**:
-  * **Framework**: Next.js 16 (App Router) + React 19 + TypeScript
-  * **Styling**: Tailwind CSS v4 + Lucide Icons + Shadcn UI
-  * **Database & Auth**: Supabase (Postgres + Auth + Storage)
-  * **Integrations**: Meta WhatsApp Business Cloud API, OpenAI / Anthropic AI reply assistant
 
 ---
 
 ## 🖥️ Server & Deployment Configuration
 * **VPS Host**: `172.93.49.117`
 * **SSH User**: `root`
-* **Deployment Path**: `/srv/apps/evolution-api` (Docker Compose)
+
+### 1. Chatwoot Support CRM (`support.cloudcrafts.net`):
+* **Path**: `/srv/apps/chatwoot` (Docker Compose)
+* **Services**:
+  * `chatwoot-web` (`chatwoot/chatwoot:latest`): Rails web server listening on port `3000` (internal)
+  * `chatwoot-worker` (`chatwoot/chatwoot:latest`): Sidekiq background task processor
+  * `chatwoot-postgres` (`pgvector/pgvector:pg15`): PostgreSQL 15 database with pgvector
+* **Redis**: `redis://redis:6379/5`
+* **Nginx Configuration**: `/srv/docker/nginx/conf.d/support.cloudcrafts.net.conf` (proxies to `http://chatwoot-web:3000` with `underscores_in_headers on;`)
+* **SSL Certificate**: `/etc/letsencrypt/live/support.cloudcrafts.net/`
+
+### 2. Evolution API Gateway (`wa.cloudcrafts.net`):
+* **Path**: `/srv/apps/evolution-api` (Docker Compose)
 * **Services**:
   * `evolution-api` (`evoapicloud/evolution-api:v2.2.3`): WhatsApp engine on port `8080` (internal, `CONFIG_SESSION_PHONE_VERSION=2.3000.1043857760`)
-  * `evolution-postgres` (`postgres:15-alpine`): Persistent PostgreSQL database
+  * `evolution-postgres` (`postgres:15-alpine`): Dedicated PostgreSQL database
   * `redis` (`redis:6379/4`): High-speed session & event caching
-* **Nginx Configuration**: `/srv/docker/nginx/conf.d/support.cloudcrafts.net.conf` (reverse proxying to `http://evolution-api:8080`)
-* **SSL Certificate**: Let's Encrypt SSL at `/etc/letsencrypt/live/support.cloudcrafts.net/`
-* **Legacy CRM**: PM2 process `support-cloudcrafts` removed; code archived at `/srv/apps/support.cloudcrafts.net.bak`.
+* **Nginx Configuration**: `/srv/docker/nginx/conf.d/wa.cloudcrafts.net.conf` (proxies to `http://evolution-api:8080`)
+* **SSL Certificate**: `/etc/letsencrypt/live/wa.cloudcrafts.net/`
 
 ---
 
-## 🔑 Evolution API Credentials & Access Details
+## 🔑 Credentials & Access Details
 
-### 1. Web Manager UI & API Gateway:
-* **Evolution Manager (Web UI)**: [`https://support.cloudcrafts.net/manager`](https://support.cloudcrafts.net/manager)
-* **API Base URL**: `https://support.cloudcrafts.net`
+### 1. Chatwoot CRM Access:
+* **Web Login URL**: [`https://support.cloudcrafts.net/app/login`](https://support.cloudcrafts.net/app/login)
+* **SuperAdmin URL**: [`https://support.cloudcrafts.net/super_admin/sign_in`](https://support.cloudcrafts.net/super_admin/sign_in)
+* **Admin Email**: `saravanajagan@gmail.com`
+* **Admin Password**: `Goldwinner007#`
+* **Account**: `CloudCrafts` (ID: `1`)
+* **API Access Token**: `LFqENNfz6J4C526Qm4WB6Uom`
+* **Connected Inboxes**:
+  * `personel`: Linked to WhatsApp number `+91 91765 89951` via Evolution API (Webhook: `https://wa.cloudcrafts.net/chatwoot/webhook/personel`)
+
+### 2. Evolution API Access:
+* **Manager UI**: [`https://wa.cloudcrafts.net/manager`](https://wa.cloudcrafts.net/manager)
+* **API Base URL**: `https://wa.cloudcrafts.net`
 * **Global API Key**: `EvoCloudCrafts_9876543210!`
 * **Auth Header**: `apikey: EvoCloudCrafts_9876543210!`
+* **Active WhatsApp Instance**: `personel` (Owner: `+91 91765 89951`, Status: `open`)
 
-### 2. Internal Database & Cache Credentials:
-* **PostgreSQL Service**: `evolution-postgres:5432` (internal Docker network `srv_default`)
-  * **Database Name**: `evolution`
-  * **Database User**: `evolution`
-  * **Database Password**: `EvoPostgres_9876543210!`
-  * **Connection URI**: `postgresql://evolution:EvoPostgres_9876543210!@evolution-postgres:5432/evolution`
-* **Redis Cache**:
-  * **URI**: `redis://redis:6379/4` (Database index 4 on existing Redis container)
-  * **Prefix Key**: `evolution`
-
-### 3. Persistent Data Volumes (on VPS):
-* `/srv/apps/evolution-api/data/postgres`: PostgreSQL database files
-* `/srv/apps/evolution-api/data/instances`: Baileys session data, encryption keys & tokens
-* `/srv/apps/evolution-api/data/store`: WhatsApp chats, messages, and contact store
-
-### 4. Basic API Usage Quick Reference:
-* **Fetch All Instances**:
+### 3. API Usage Quick Reference:
+* **Send Outbound WhatsApp Message via Evolution API**:
   ```bash
-  curl -X GET "https://support.cloudcrafts.net/instance/fetchInstances" \
-    -H "apikey: EvoCloudCrafts_9876543210!"
-  ```
-* **Send Text Message (No 24h Window / No Template Needed)**:
-  ```bash
-  curl -X POST "https://support.cloudcrafts.net/message/sendText/<instance-name>" \
+  curl -X POST "https://wa.cloudcrafts.net/message/sendText/personel" \
     -H "apikey: EvoCloudCrafts_9876543210!" \
     -H "Content-Type: application/json" \
     -d '{

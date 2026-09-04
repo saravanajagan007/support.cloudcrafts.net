@@ -1,0 +1,45 @@
+services:
+  chatwoot-postgres:
+    image: pgvector/pgvector:pg15
+    container_name: chatwoot-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: chatwoot_production
+      POSTGRES_USER: chatwoot
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-ChatwootDb_9876543210!}
+    volumes:
+      - ./data/postgres:/var/lib/postgresql/data
+    networks:
+      - srv_default
+
+  chatwoot-web:
+    image: chatwoot/chatwoot:latest
+    container_name: chatwoot-web
+    restart: unless-stopped
+    depends_on:
+      - chatwoot-postgres
+    env_file:
+      - .env
+    command: ["bundle", "exec", "rails", "s", "-p", "3000", "-b", "0.0.0.0"]
+    volumes:
+      - ./data/storage:/app/storage
+    networks:
+      - srv_default
+
+  chatwoot-worker:
+    image: chatwoot/chatwoot:latest
+    container_name: chatwoot-worker
+    restart: unless-stopped
+    depends_on:
+      - chatwoot-postgres
+    env_file:
+      - .env
+    command: ["bundle", "exec", "sidekiq", "-C", "config/sidekiq.yml"]
+    volumes:
+      - ./data/storage:/app/storage
+    networks:
+      - srv_default
+
+networks:
+  srv_default:
+    external: true
