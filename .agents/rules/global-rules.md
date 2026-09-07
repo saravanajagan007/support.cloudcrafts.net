@@ -36,3 +36,10 @@ Use the following official live PayPal credentials for international checkout an
 - **Evolution API Key**: `EvoCloudCrafts_9876543210!`
 - **Active Instance**: `personel` (`+91 91765 89951`, connected & linked to Chatwoot inbox `personel`)
 
+## Google Ads Account & Credentials
+- **Google Ads Customer ID**: `607-194-5419` (unhyphenated: `6071945419`)
+- **API Config File**: `google-ads.yaml`
+- **Developer Token**: Pending
+- **OAuth Client ID & Secret**: Pending
+- **OAuth Refresh Token**: Pending
+
